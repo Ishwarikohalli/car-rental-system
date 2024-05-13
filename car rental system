@@ -1,0 +1,680 @@
+package com.jdbc.car;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+class Car {
+    private String brand;
+    private String model;
+    private boolean available;
+    private double mileage;
+    private double ratePerDay;
+    private double ratePerHour;
+
+    public Car(String brand, String model, double mileage, double ratePerDay, double ratePerHour) {
+        this.brand = brand;
+        this.model = model;
+        this.available = true;
+        this.mileage = mileage;
+        this.ratePerDay = ratePerDay;
+        this.ratePerHour = ratePerHour;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    public double getMileage() {
+        return mileage;
+    }
+
+    public double getRatePerDay() {
+        return ratePerDay;
+    }
+
+    public double getRatePerHour() {
+        return ratePerHour;
+    }
+
+    @Override
+    public String toString() {
+        return brand + " " + model + " - Available: " + available;
+    }
+}
+
+class Booking {
+    private String pickupAddress;
+    private String destinationAddress;
+    private Car car;
+    private File idProof;
+
+    public Booking(String pickupAddress, String destinationAddress, Car car, File idProof) {
+        this.pickupAddress = pickupAddress;
+        this.destinationAddress = destinationAddress;
+        this.car = car;
+        this.idProof = idProof;
+    }
+
+    public String getPickupAddress() {
+        return pickupAddress;
+    }
+
+    public String getDestinationAddress() {
+        return destinationAddress;
+    }
+
+    public Car getCar() {
+        return car;
+    }
+
+    public File getIdProof() {
+        return idProof;
+    }
+}
+
+
+public class CarRentalSystem extends JFrame implements ActionListener {
+
+    private static final long serialVersionUID = 1L;
+    private JLabel imageLabel;
+    private JButton rentButton;
+    private JButton fleetOwnerButton;
+    private JButton backButton;
+    private JButton uploadButton;
+    private JTextField nameField;
+    private JTextField addressField;
+    private JTextField contactField;
+    private JLabel uploadStatusLabel;
+    private String imagePath;
+
+    public CarRentalSystem() {
+        super("Car Rental System");
+
+        setLayout(new BorderLayout());
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel contentPane = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                try {
+                    Image img = ImageIO.read(new File("C:\\Users\\ishwa\\Pictures\\carimage2.png.jpg"));
+                    g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        contentPane.setLayout(null);
+        setContentPane(contentPane);
+
+        rentButton = new JButton("Rent");
+        rentButton.addActionListener(this);
+        rentButton.setBounds(200, 300, 300, 50);
+        Font classyFont = new Font("Palatino", Font.BOLD | Font.ITALIC, 38);
+        rentButton.setFont(classyFont);
+        contentPane.add(rentButton);
+
+        fleetOwnerButton = new JButton("Fleet Owner");
+        fleetOwnerButton.addActionListener(this);
+        fleetOwnerButton.setBounds(200, 400, 300, 50);
+        fleetOwnerButton.setFont(classyFont);
+        contentPane.add(fleetOwnerButton);
+
+        pack();
+        setSize(2000, 1100);
+        setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == rentButton) { rentButtonClick();
+
+        } else if (e.getSource() == fleetOwnerButton) {
+            showUserDetailsForm();
+        } else if (e.getSource() == backButton) {
+            Container parent = uploadStatusLabel.getParent();
+            parent.remove(uploadStatusLabel);
+            parent.revalidate();
+            parent.repaint();
+            parent.setVisible(false);
+            showFleetOwnerForm();
+        } else if (e.getSource() == uploadButton) {
+            uploadCarDocuments();
+        } else if (e.getActionCommand().equals("Next")) {
+            showBankDetailsForm();
+        }
+    }
+
+private void rentButtonClick(){
+    	{
+
+            String pickupAddress = JOptionPane.showInputDialog(this, "Enter Pickup Address:");
+            String destinationAddress = JOptionPane.showInputDialog(this, "Enter Destination Address:");
+
+            JLabel pickupLabel = new JLabel("Pickup Address: " + pickupAddress);
+            JLabel destinationLabel = new JLabel("Destination Address: " + destinationAddress);
+
+            Car[] cars = {
+                    new Car("Maruti", "Suzuki", 25.5, 2300, 400),
+                    new Car("Honda", "Accord", 30.2, 2500, 600),
+                    new Car("Ford", "Fusion", 28.7, 3000, 300),
+                    new Car("Chevrolet", "Malibu", 27.3, 6500, 1000),
+                    new Car("Volkswagen", "Jetta", 29.8, 7000, 1100),
+                    new Car("Nissan", "Altima", 26.6, 5200, 1040),
+                    new Car("BMW", "3 Series", 31.5, 7500, 1500),
+                    new Car("Audi", "A4", 32.0, 8000, 1000),
+                    new Car("Mercedes-Benz", "C-Class", 30.1, 7800, 1305),
+                    new Car("Hyundai", "Sonata", 28.9, 5700, 1105)
+            };
+
+            JFrame frame = new JFrame("Available Cars");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.setLayout(new BorderLayout());
+
+            JPanel addressPanel = new JPanel(new GridLayout(2, 1));
+            addressPanel.add(pickupLabel);
+            addressPanel.add(destinationLabel);
+            frame.add(addressPanel, BorderLayout.NORTH);
+
+            String[] columnNames = {"Brand", "Model", "Mileage", "Rate/Day (Rs)", "Rate/Hour (Rs)"};
+            Object[][] rowData = new Object[cars.length][5];
+
+            for (int i = 0; i < cars.length; i++) {
+                Car car = cars[i];
+                if (car.isAvailable()) {
+                    rowData[i][0] = car.getBrand();
+                    rowData[i][1] = car.getModel();
+                    rowData[i][2] = car.getMileage();
+                    rowData[i][3] = car.getRatePerDay();
+                    rowData[i][4] = car.getRatePerHour();
+                }
+            }
+
+            JTable table = new JTable(rowData, columnNames);
+            JScrollPane scrollPane = new JScrollPane(table);
+            frame.add(scrollPane, BorderLayout.CENTER);
+
+            JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
+            JButton bookingButton = new JButton("Next");
+            JButton backButton = new JButton("Back");
+            bookingButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    int selectedRow = table.getSelectedRow();
+                    if (selectedRow == -1) {
+                        JOptionPane.showMessageDialog(frame, "Please select a car to book.");
+                    } else {
+                        Car selectedCar = cars[selectedRow];
+                        openPersonalDetailsFrame(pickupAddress, destinationAddress, selectedCar);
+                        frame.dispose();
+                    }
+                }
+            });
+            backButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    frame.dispose();
+                }
+            });
+            buttonPanel.add(bookingButton);
+            buttonPanel.add(backButton);
+            frame.add(buttonPanel, BorderLayout.SOUTH);
+
+            frame.setSize(900, 700);
+            frame.setVisible(true);
+        }
+
+    }
+
+
+private void openPersonalDetailsFrame(String pickupAddress, String destinationAddress, Car selectedCar) {
+    JFrame personalDetailsFrame = new JFrame("Enter Personal Details");
+    personalDetailsFrame.setLayout(new BorderLayout());
+
+    JPanel panel = new JPanel(new GridBagLayout());
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.anchor = GridBagConstraints.WEST;
+    gbc.insets = new Insets(5, 5, 5, 5);
+
+    JLabel nameLabel = new JLabel("Name:");
+    JTextField nameField = new JTextField(20);
+    addComponent(panel, nameLabel, gbc, 0, 0);
+    addComponent(panel, nameField, gbc, 1, 0);
+
+    JLabel contactLabel = new JLabel("Contact:");
+    JTextField contactField = new JTextField(20);
+    addComponent(panel, contactLabel, gbc, 0, 1);
+    addComponent(panel, contactField, gbc, 1, 1);
+
+    JLabel addressLabel = new JLabel("Permanent Address:");
+    JTextField addressField = new JTextField(20);
+    addComponent(panel, addressLabel, gbc, 0, 2);
+    addComponent(panel, addressField, gbc, 1, 2);
+
+    JLabel idProofLabel = new JLabel("ID Proof (Aadhar Card):");
+    JTextField idProofField = new JTextField(20);
+    addComponent(panel, idProofLabel, gbc, 0, 3);
+    addComponent(panel, idProofField, gbc, 1, 3);
+
+    JButton uploadIdProofButton = new JButton("Upload ID Proof");
+    uploadIdProofButton.addActionListener(e -> {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(personalDetailsFrame);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            idProofField.setText(selectedFile.getAbsolutePath());
+        }
+    });
+    addComponent(panel, uploadIdProofButton, gbc, 1, 4);
+
+    JLabel durationLabel = new JLabel("Select Duration:");
+    addComponent(panel, durationLabel, gbc, 0, 5);
+
+    JPanel durationPanel = new JPanel();
+    JRadioButton perDayRadioButton = new JRadioButton("Per Day");
+    JRadioButton perHourRadioButton = new JRadioButton("Per Hour");
+    ButtonGroup durationGroup = new ButtonGroup();
+    durationGroup.add(perDayRadioButton);
+    durationGroup.add(perHourRadioButton);
+    durationPanel.add(perDayRadioButton);
+    durationPanel.add(perHourRadioButton);
+    addComponent(panel, durationPanel, gbc, 1, 5);
+
+    JLabel dateLabel = new JLabel("Enter Date :");
+    JTextField dateField = new JTextField(20);
+    addComponent(panel, dateLabel, gbc, 0, 6);
+    addComponent(panel, dateField, gbc, 1, 6);
+
+    JLabel durationValueLabel = new JLabel("Duration Value:");
+    JTextField durationField = new JTextField(20);
+    addComponent(panel, durationValueLabel, gbc, 0, 7);
+    addComponent(panel, durationField, gbc, 1, 7);
+
+    JButton paymentButton = new JButton("Make payment");
+    paymentButton.setEnabled(false); 
+
+    JButton nextButton = new JButton("Next");
+
+    nextButton.addActionListener(e -> {
+        
+        paymentButton.setEnabled(true); 
+    });
+
+    paymentButton.addActionListener(e -> displayPaymentGUI());
+
+    JPanel buttonPanel = new JPanel(new FlowLayout());
+    buttonPanel.add(nextButton);
+    buttonPanel.add(paymentButton); 
+
+    personalDetailsFrame.add(panel, BorderLayout.CENTER);
+    personalDetailsFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+    personalDetailsFrame.setSize(600, 400);
+    personalDetailsFrame.setLocationRelativeTo(null);
+    personalDetailsFrame.setVisible(true);
+}
+
+private void addComponent(Container container, Component component, GridBagConstraints gbc, int gridx, int gridy) {
+    gbc.gridx = gridx;
+    gbc.gridy = gridy;
+    container.add(component, gbc);
+}
+
+    private void displayPaymentGUI() {
+        JFrame paymentFrame = new JFrame("Payment");
+        paymentFrame.setLayout(new BorderLayout());
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JLabel paymentLabel = new JLabel("Please make the payment by scanning the QR code below:");
+        panel.add(paymentLabel);
+
+        ImageIcon qrCodeIcon = new ImageIcon("C:\\Users\\ishwa\\Pictures\\qr.jpg");
+        Image scaledQrCodeImg = qrCodeIcon.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH); // Adjust dimensions as needed
+        ImageIcon scaledQrCodeIcon = new ImageIcon(scaledQrCodeImg);
+        JLabel qrCodeLabel = new JLabel(scaledQrCodeIcon);
+        panel.add(qrCodeLabel);
+
+        JButton uploadButton = new JButton("Upload");
+        uploadButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	
+            	JLabel durationField = null;
+				Object selectedCar = null;
+				double amount = 0;
+				saveUserDataToDatabase(selectedCar, nameField.getText(), contactField.getText(), addressField.getText(), durationField.getText(), amount); {
+
+                try {
+                    Class.forName("com.mysql.cj.jdbc.Driver");
+                    Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcbd", "root", "root");
+                    String sql = "INSERT INTO rental_history ( selectedcar,name, contact, address, duration, amount) VALUES (?, ?, ?, ?, ?,?)";
+                    PreparedStatement stmt = con.prepareStatement(sql);
+                    stmt.setString(1, (String) selectedCar);
+                    stmt.setString(2, getName());
+                    String contact = null;
+					stmt.setString(3, contact);
+                    stmt.setString(4, addressField.getText());
+                    stmt.setString(5, durationField.getText());
+                    stmt.setDouble(6, amount);
+                  
+                    stmt.executeUpdate();
+                    con.close();
+                } catch (Exception ex) {
+                    System.out.println(ex);
+
+                }}
+            	displayPolicies();
+                paymentFrame.dispose();
+                
+            	JFileChooser fileChooser = new JFileChooser();
+                int result = fileChooser.showOpenDialog(paymentFrame);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+
+                    JOptionPane.showMessageDialog(paymentFrame, "File uploaded successfully: " + selectedFile.getName());
+                }
+            }
+
+			private void saveUserDataToDatabase(Object selectedCar, String text, String text2, String text3,
+					String text4, double amount) {
+			
+				
+			}
+        });
+        panel.add(uploadButton);
+
+        JButton doneButton = new JButton("Done");
+        doneButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                displayPolicies(); 
+                paymentFrame.dispose(); 
+            }
+        });
+        panel.add(doneButton);
+
+        paymentFrame.add(panel);
+        paymentFrame.pack();
+        paymentFrame.setLocationRelativeTo(null);
+        paymentFrame.setVisible(true);
+    }
+    
+
+    private void displayPolicies() {
+        JFrame policiesFrame = new JFrame("Policies");
+        policiesFrame.setLayout(new BorderLayout());
+        policiesFrame.setSize(900, 700);
+
+        JTextArea policiesArea = new JTextArea();
+        policiesArea.setText("1. \"Employee benefits\" 1\n2. Vehicle tracking system\n3. Responsibility insurance\n4.Personal  accidents insurance "); // Add your policies here
+        policiesArea.setEditable(false); 
+        JScrollPane scrollPane = new JScrollPane(policiesArea);
+        policiesFrame.add(scrollPane, BorderLayout.CENTER);
+
+      
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JCheckBox agreeCheckBox = new JCheckBox("I agree to the policies");
+        JButton submitButton = new JButton("Submit");
+        submitButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (agreeCheckBox.isSelected()) {
+                    policiesFrame.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(null, "Please agree to the policies.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        buttonPanel.add(agreeCheckBox);
+        buttonPanel.add(submitButton);
+        policiesFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        policiesFrame.setLocationRelativeTo(null);
+        policiesFrame.setVisible(true);
+    }
+
+
+
+
+    private void showUserDetailsForm() {
+        JFrame userDetailsFrame = new JFrame("User Details");
+        userDetailsFrame.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(10, 10, 10, 10);
+
+        userDetailsFrame.add(new JLabel("Name:"), gbc);
+        gbc.gridx = 1;
+        nameField = new JTextField(20);
+        userDetailsFrame.add(nameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        userDetailsFrame.add(new JLabel("Permanent Address:"), gbc);
+        gbc.gridx = 1;
+        addressField = new JTextField(20);
+        userDetailsFrame.add(addressField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        userDetailsFrame.add(new JLabel("Contact Number:"), gbc);
+        gbc.gridx = 1;
+        contactField = new JTextField(20);
+        contactField.setDocument(new PlainDocument() {
+            @Override
+            public void insertString(int offs, String str, javax.swing.text.AttributeSet a) throws BadLocationException {
+                if (str == null || !str.matches("\\d*")) {
+                    return;
+                }
+                super.insertString(offs, str, a);
+            }
+        });
+        userDetailsFrame.add(contactField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        userDetailsFrame.add(new JLabel("Upload Car Documents:"), gbc);
+        uploadButton = new JButton("Upload");
+        uploadButton.addActionListener(this);
+        gbc.gridx = 1;
+        userDetailsFrame.add(uploadButton, gbc);
+
+        gbc.gridy++;
+        uploadStatusLabel = new JLabel();
+        userDetailsFrame.add(uploadStatusLabel, gbc);
+
+        gbc.gridy++;
+        backButton = new JButton("Back");
+        backButton.addActionListener(this);
+        userDetailsFrame.add(backButton, gbc);
+
+        gbc.gridy++;
+        AbstractButton nextButton = new JButton("Next");
+        nextButton.addActionListener(this);
+        userDetailsFrame.add(nextButton, gbc);
+
+        userDetailsFrame.pack();
+        userDetailsFrame.setVisible(true);
+    }
+    
+    private void showFleetOwnerForm() {
+     
+    }
+
+    private void uploadCarDocuments() {
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            try {
+                Image img = ImageIO.read(selectedFile);
+                Image scaledImg = img.getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+                uploadStatusLabel.setIcon(new ImageIcon(scaledImg));
+                imagePath = selectedFile.getAbsolutePath();
+                uploadStatusLabel.setText("Image uploaded successfully");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void showBankDetailsForm() {
+        JFrame bankDetailsFrame = new JFrame("Bank Details");
+        bankDetailsFrame.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(10, 10, 10, 10);
+
+        bankDetailsFrame.add(new JLabel("Bank Name:"), gbc);
+        gbc.gridx = 1;
+        JTextField bankNameField = new JTextField(20);
+        bankDetailsFrame.add(bankNameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        bankDetailsFrame.add(new JLabel("Account Number:"), gbc);
+        gbc.gridx = 1;
+        JTextField accountNumberField = new JTextField(20);
+        accountNumberField.setDocument(new PlainDocument() {
+            @Override
+            public void insertString(int offs, String str, javax.swing.text.AttributeSet a) throws BadLocationException {
+                if (str == null || !str.matches("\\d*")) {
+                    return;
+                }
+                super.insertString(offs, str, a);
+            }
+        });
+        bankDetailsFrame.add(accountNumberField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        bankDetailsFrame.add(new JLabel("IFSC Code:"), gbc);
+        gbc.gridx = 1;
+        JTextField ifscCodeField = new JTextField(20);
+        bankDetailsFrame.add(ifscCodeField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        bankDetailsFrame.add(new JLabel("Branch Name:"), gbc);
+        gbc.gridx = 1;
+        JTextField branchNameField = new JTextField(20);
+        bankDetailsFrame.add(branchNameField, gbc);
+
+        gbc.gridy++;
+        JButton nextButton = new JButton("Next");
+        nextButton.addActionListener(e -> {
+           
+            saveUserDataToDatabase(nameField.getText(), contactField.getText(), imagePath, bankNameField.getText(),
+                    accountNumberField.getText(), ifscCodeField.getText(), branchNameField.getText());
+
+            bankDetailsFrame.dispose();
+            showPoliciesForm();
+        });
+        bankDetailsFrame.add(nextButton, gbc);
+
+        gbc.gridy++;
+        backButton = new JButton("Back");
+        backButton.addActionListener(this);
+        bankDetailsFrame.add(backButton, gbc);
+
+        bankDetailsFrame.pack();
+        bankDetailsFrame.setVisible(true);
+    }
+
+    private void showPoliciesForm() {
+        JFrame policiesFrame = new JFrame("Policies");
+        policiesFrame.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(10, 10, 10, 10);
+
+        policiesFrame.add(new JLabel("Policies:"), gbc);
+
+        String[] policies = {
+                "Secure Parking Facilities",
+                "Vehicle tracking system",
+                "Regular maintenance checks",
+                "Employee Training on security protocols"
+        };
+        for (int i = 0; i < policies.length; i++) {
+            gbc.gridy++;
+            policiesFrame.add(new JLabel((i + 1) + ". " + policies[i]), gbc);
+        }
+
+        gbc.gridy++;
+        JCheckBox agreeCheckBox = new JCheckBox("I agree to the policies");
+        policiesFrame.add(agreeCheckBox, gbc);
+
+        gbc.gridy++;
+        JButton submitButton = new JButton("Submit");
+        submitButton.addActionListener(e -> {
+            if (agreeCheckBox.isSelected()) {
+                policiesFrame.dispose();
+            } else {
+                JOptionPane.showMessageDialog(null, "Please agree to the policies.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        policiesFrame.add(submitButton, gbc);
+
+        policiesFrame.pack();
+        policiesFrame.setVisible(true);
+    }
+
+    private void saveUserDataToDatabase(String name, String contact, String imagePath, String bankName,
+                                         String accountNumber, String ifscCode, String branchName) {
+        try {
+           
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbcbd", "root", "root");
+
+            String insertQuery = "INSERT INTO user_data (name, contact, bankName, accountNumber, ifscCode, branchName) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(insertQuery);
+
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, contact);
+            preparedStatement.setString(4, bankName);
+            preparedStatement.setString(5, accountNumber);
+            preparedStatement.setString(6, ifscCode);
+            preparedStatement.setString(7, branchName);
+
+            preparedStatement.executeUpdate();
+
+            preparedStatement.close();
+            conn.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        new CarRentalSystem();
+    }
